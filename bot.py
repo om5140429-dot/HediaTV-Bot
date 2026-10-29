@@ -26,22 +26,19 @@ API_ID = int(os.getenv("API_ID", "36052764"))
 API_HASH = os.getenv("API_HASH", "d90e2691d1c4ac4d7f5f4c1175317c32")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "9073792660:AAFKr+iG8M6W0tvyI+7yUaCHVQAhWBRjn00")
 
-# مفاتيح Internet Archive السرية التي أضفتها في GitHub Secrets
+# مفاتيح Internet Archive السرية
 IA_ACCESS_KEY = os.getenv("IA_ACCESS_KEY", "")
 IA_SECRET_KEY = os.getenv("IA_SECRET_KEY", "")
 
 app = Client("hedia_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 def upload_to_internet_archive(file_path):
-    """دالة لرفع الفيديو تلقائياً على Internet Archive وإرجاع الرابط المباشر الدائم لأي حجم"""
     if not IA_ACCESS_KEY or not IA_SECRET_KEY:
         raise Exception("مفاتيح Internet Archive غير موجودة في المتغيرات السرية!")
     
-    # إنشاء معرف فريد للملف يعتمد على الوقت لتجنب تكرار الأسماء
     identifier = f"hediatv_video_{int(time.time())}"
     file_name = os.path.basename(file_path)
     
-    # رفع الملف باستخدام مكتبة internetarchive ومفاتيح الـ S3
     upload(
         identifier,
         files=[file_path],
@@ -50,20 +47,29 @@ def upload_to_internet_archive(file_path):
         verbose=True
     )
     
-    # تكوين الرابط المباشر الدائم
     direct_link = f"https://archive.org/download/{identifier}/{file_name}"
     return direct_link
 
 @app.on_message(filters.command("start"))
 def start_handler(client, message):
-    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك الفيديو وهسحبه وأوفر لك رابطه المباشر الدائم (مساحة مفتوحة بدون قيود) فوراً 🚀")
+    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك الفيديو وهسحبه وأوفر لك رابطه المباشر الدائم فوراً 🚀")
 
 @app.on_message(filters.text & ~filters.command("start"))
 def download_handler(client, message):
+    # نتأكد أن الرسالة مش من البوت نفسه وأنها رابط يبدأ بـ http
+    if message.from_user.is_bot:
+        return
+
     url = message.text.strip()
+    if not url.startswith("http"):
+        return  # لو مش رابط، تجاهله تماماً
+
     status_msg = message.reply_text("⏳ جاري سحب وتحميل الفيديو سحابياً، ثواني ويكون جاهز...")
     
     try:
+        if os.path.exists("video.mp4"):
+            os.remove("video.mp4")
+
         ydl_opts = {
             'format': 'best',
             'outtmpl': 'video.mp4',
@@ -72,12 +78,10 @@ def download_handler(client, message):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
             
-        status_msg.edit_text("📤 جاري رفع الفيديو على سحابة Internet Archive (دائم وبدون حدود للحجم)...")
+        status_msg.edit_text("📤 جاري رفع الفيديو على سحابة Internet Archive (دائم وبدون حدود)...")
         
-        # رفع الفيديو لـ Internet Archive والحصول على الرابط المباشر الدائم
         direct_link = upload_to_internet_archive("video.mp4")
         
-        # إرسال الرابط المباشر فقط للمستخدم بدون إعادة إرسال الملف
         message.reply_text(
             f"✅ **تم تجهيز الفيديو بنجاح يا أسطورة!**\n\n🔗 **الرابط المباشر الدائم:**\n{direct_link}",
             disable_web_page_preview=True
