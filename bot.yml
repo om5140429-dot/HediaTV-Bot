@@ -31,5 +31,7 @@ jobs:
         BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         API_ID: ${{ secrets.API_ID }}
         API_HASH: ${{ secrets.API_HASH }}
+        IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
+        IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
       run: |
         python bot.py
