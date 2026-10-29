@@ -1,9 +1,11 @@
 import os
-from pyrogram import Client, filters
-import yt_dlp
-from flask import Flask
+import time
 import threading
+from flask import Flask
 import requests
+import yt_dlp
+from pyrogram import Client, filters
+from internetarchive import upload
 
 # إعداد خادم ويب خفيف عشان Render يفضل مرتاح وما يقفلش البوت
 app_web = Flask('')
@@ -24,23 +26,37 @@ API_ID = int(os.getenv("API_ID", "36052764"))
 API_HASH = os.getenv("API_HASH", "d90e2691d1c4ac4d7f5f4c1175317c32")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "9073792660:AAFKr+iG8M6W0tvyI+7yUaCHVQAhWBRjn00")
 
+# مفاتيح Internet Archive السرية التي أضفتها في GitHub Secrets
+IA_ACCESS_KEY = os.getenv("IA_ACCESS_KEY", "")
+IA_SECRET_KEY = os.getenv("IA_SECRET_KEY", "")
+
 app = Client("hedia_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-def upload_to_catbox(file_path):
-    """دالة لرفع الفيديو تلقائياً على Catbox.moe وإرجاع الرابط المباشر"""
-    url = "https://catbox.moe/user/api.php"
-    with open(file_path, 'rb') as f:
-        files = {'fileToUpload': f}
-        data = {'reqtype': 'fileupload'}
-        response = requests.post(url, data=data, files=files)
-    if response.status_code == 200:
-        return response.text.strip()
-    else:
-        raise Exception("فشل الرفع على سحابة Catbox")
+def upload_to_internet_archive(file_path):
+    """دالة لرفع الفيديو تلقائياً على Internet Archive وإرجاع الرابط المباشر الدائم لأي حجم"""
+    if not IA_ACCESS_KEY or not IA_SECRET_KEY:
+        raise Exception("مفاتيح Internet Archive غير موجودة في المتغيرات السرية!")
+    
+    # إنشاء معرف فريد للملف يعتمد على الوقت لتجنب تكرار الأسماء
+    identifier = f"hediatv_video_{int(time.time())}"
+    file_name = os.path.basename(file_path)
+    
+    # رفع الملف باستخدام مكتبة internetarchive ومفاتيح الـ S3
+    upload(
+        identifier,
+        files=[file_path],
+        access_key=IA_ACCESS_KEY,
+        secret_key=IA_SECRET_KEY,
+        verbose=True
+    )
+    
+    # تكوين الرابط المباشر الدائم
+    direct_link = f"https://archive.org/download/{identifier}/{file_name}"
+    return direct_link
 
 @app.on_message(filters.command("start"))
 def start_handler(client, message):
-    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك الفيديو وهسحبه وأوفر لك رابطه المباشر الدائم فوراً 🚀")
+    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك الفيديو وهسحبه وأوفر لك رابطه المباشر الدائم (مساحة مفتوحة بدون قيود) فوراً 🚀")
 
 @app.on_message(filters.text & ~filters.command("start"))
 def download_handler(client, message):
@@ -56,10 +72,10 @@ def download_handler(client, message):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
             
-        status_msg.edit_text("📤 جاري توليد الرابط المباشر الدائم...")
+        status_msg.edit_text("📤 جاري رفع الفيديو على سحابة Internet Archive (دائم وبدون حدود للحجم)...")
         
-        # رفع الفيديو لـ Catbox والحصول على الرابط المباشر
-        direct_link = upload_to_catbox("video.mp4")
+        # رفع الفيديو لـ Internet Archive والحصول على الرابط المباشر الدائم
+        direct_link = upload_to_internet_archive("video.mp4")
         
         # إرسال الرابط المباشر فقط للمستخدم بدون إعادة إرسال الملف
         message.reply_text(
