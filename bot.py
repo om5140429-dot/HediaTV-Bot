@@ -1,8 +1,24 @@
 import os
 from pyrogram import Client, filters
 import yt_dlp
+from flask import Flask
+import threading
 
-# قراءة المتغيرات السرية اللي ضبطناها في سحابية Render بأمان تام
+# إعداد خادم ويب خفيف عشان Render يفضل مرتاح وما يقفلش البوت
+app_web = Flask('')
+
+@app_web.route('/')
+def home():
+    return "HediaTV-Bot is running 24/7!"
+
+def run_web():
+    app_web.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+
+# بدء خادم الويب في خلفية منفصلة
+t = threading.Thread(target=run_web)
+t.start()
+
+# بيانات البوت من المتغيرات السرية
 API_ID = int(os.getenv("API_ID", "36052764"))
 API_HASH = os.getenv("API_HASH", "d90e2691d1c4ac4d7f5f4c1175317c32")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "9073792660:AAFKr+iG8M6W0tvyI+7yUaCHVQAhWBRjn00")
@@ -29,14 +45,12 @@ def download_handler(client, message):
             
         status_msg.edit_text("📤 جاري الرفع على تيليجرام...")
         
-        # رفع الفيديو
-        sent_msg = client.send_video(
+        client.send_video(
             chat_id=message.chat.id,
             video="video.mp4",
             caption="🎬 اتفضل يا هندسة الفيديو جاهز للتطبيق!"
         )
         
-        # مسح الملف من على السيرفر فوراً عشان نحافظ على المساحة (صفر استهلاك)
         if os.path.exists("video.mp4"):
             os.remove("video.mp4")
             
@@ -45,5 +59,5 @@ def download_handler(client, message):
     except Exception as e:
         status_msg.edit_text(f"❌ حصل خطأ أثناء المعالجة: {str(e)}")
 
-print("Bot is running and ready... 🚀")
+print("Bot and Web server are running... 🚀")
 app.run()
