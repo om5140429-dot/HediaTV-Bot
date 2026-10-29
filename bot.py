@@ -56,13 +56,13 @@ def start_handler(client, message):
 
 @app.on_message(filters.text & ~filters.command("start"))
 def download_handler(client, message):
-    # نتأكد أن الرسالة مش من البوت نفسه وأنها رابط يبدأ بـ http
+    # شرط صارم جداً: تجاهل رسائل البوت تماماً، وتجاهل أي نص لا يبدأ بـ http
     if message.from_user.is_bot:
         return
-
+    
     url = message.text.strip()
     if not url.startswith("http"):
-        return  # لو مش رابط، تجاهله تماماً
+        return
 
     status_msg = message.reply_text("⏳ جاري سحب وتحميل الفيديو سحابياً، ثواني ويكون جاهز...")
     
