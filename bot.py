@@ -3,6 +3,7 @@ from pyrogram import Client, filters
 import yt_dlp
 from flask import Flask
 import threading
+import requests
 
 # إعداد خادم ويب خفيف عشان Render يفضل مرتاح وما يقفلش البوت
 app_web = Flask('')
@@ -25,14 +26,26 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "9073792660:AAFKr+iG8M6W0tvyI+7yUaCHVQAhWBRjn
 
 app = Client("hedia_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+def upload_to_catbox(file_path):
+    """دالة لرفع الفيديو تلقائياً على Catbox.moe وإرجاع الرابط المباشر"""
+    url = "https://catbox.moe/user/api.php"
+    with open(file_path, 'rb') as f:
+        files = {'fileToUpload': f}
+        data = {'reqtype': 'fileupload'}
+        response = requests.post(url, data=data, files=files)
+    if response.status_code == 200:
+        return response.text.strip()
+    else:
+        raise Exception("فشل الرفع على سحابة Catbox")
+
 @app.on_message(filters.command("start"))
 def start_handler(client, message):
-    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك الفيديو وهسحبه وأرفعه لك فوراً وبدون استهلاك مساحة 🚀")
+    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك الفيديو وهسحبه وأوفر لك رابطه المباشر الدائم فوراً 🚀")
 
 @app.on_message(filters.text & ~filters.command("start"))
 def download_handler(client, message):
     url = message.text.strip()
-    status_msg = message.reply_text("⏳ جاري سحب وتحميل الفيديو، ثواني ويكون جاهز...")
+    status_msg = message.reply_text("⏳ جاري سحب وتحميل الفيديو سحابياً، ثواني ويكون جاهز...")
     
     try:
         ydl_opts = {
@@ -43,12 +56,15 @@ def download_handler(client, message):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
             
-        status_msg.edit_text("📤 جاري الرفع على تيليجرام...")
+        status_msg.edit_text("📤 جاري توليد الرابط المباشر الدائم...")
         
-        client.send_video(
-            chat_id=message.chat.id,
-            video="video.mp4",
-            caption="🎬 اتفضل يا هندسة الفيديو جاهز للتطبيق!"
+        # رفع الفيديو لـ Catbox والحصول على الرابط المباشر
+        direct_link = upload_to_catbox("video.mp4")
+        
+        # إرسال الرابط المباشر فقط للمستخدم بدون إعادة إرسال الملف
+        message.reply_text(
+            f"✅ **تم تجهيز الفيديو بنجاح يا أسطورة!**\n\n🔗 **الرابط المباشر الدائم:**\n{direct_link}",
+            disable_web_page_preview=True
         )
         
         if os.path.exists("video.mp4"):
@@ -57,6 +73,8 @@ def download_handler(client, message):
         status_msg.delete()
         
     except Exception as e:
+        if os.path.exists("video.mp4"):
+            os.remove("video.mp4")
         status_msg.edit_text(f"❌ حصل خطأ أثناء المعالجة: {str(e)}")
 
 print("Bot and Web server are running... 🚀")
