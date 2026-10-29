@@ -2,10 +2,10 @@ import os
 from pyrogram import Client, filters
 import yt_dlp
 
-# بيانات البوت المربطة بيك يا هندسة
-API_ID = 36052764
-API_HASH = "d90e2691d1c4ac4d7f5f4c1175317c32"
-BOT_TOKEN = "9073792660:AAFKr+iG8M6W0tvyI+7yUaCHVQAhWBRjn00"
+# قراءة المتغيرات السرية اللي ضبطناها في سحابية Render بأمان تام
+API_ID = int(os.getenv("API_ID", "36052764"))
+API_HASH = os.getenv("API_HASH", "d90e2691d1c4ac4d7f5f4c1175317c32")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "9073792660:AAFKr+iG8M6W0tvyI+7yUaCHVQAhWBRjn00")
 
 app = Client("hedia_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -29,7 +29,7 @@ def download_handler(client, message):
             
         status_msg.edit_text("📤 جاري الرفع على تيليجرام...")
         
-        # رفع الفيديو والحصول على رابط مباشر
+        # رفع الفيديو
         sent_msg = client.send_video(
             chat_id=message.chat.id,
             video="video.mp4",
