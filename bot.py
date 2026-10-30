@@ -37,7 +37,10 @@ def download_and_upload(client, message):
             ydl.download([url])
 
         if os.path.exists(output_filename):
-            m.edit("📤 جاري رفع الملف على أرشيف السحاب...")
+            try:
+                m.edit("📤 جاري رفع الملف على أرشيف السحاب...")
+            except:
+                pass
             
             # رفع الملف على Internet Archive بالاسم الثابت والنظيف
             identifier = f"hediatv-{os.urandom(3).hex()}"
@@ -48,16 +51,16 @@ def download_and_upload(client, message):
             
             if r[0].status_code == 200:
                 direct_link = f"https://archive.org/download/{identifier}/{safe_filename}"
-                m.edit(f"✅ تم الرفع بنجاح يا فنان!\n\n🔗 **الرابط المباشر:**\n{direct_link}")
+                message.reply(f"✅ تم الرفع بنجاح يا فنان!\n\n🔗 **الرابط المباشر:**\n{direct_link}")
             else:
-                m.edit("❌ حدث خطأ أثناء الرفع على الأرشيف.")
+                message.reply("❌ حدث خطأ أثناء الرفع على الأرشيف.")
                 
             if os.path.exists(output_filename):
                 os.remove(output_filename)
         else:
-            m.edit("❌ فشل تحميل الملف.")
+            message.reply("❌ فشل تحميل الملف.")
     except Exception as e:
-        m.edit(f"❌ حدث خطأ: {str(e)}")
+        message.reply(f"❌ حدث خطأ: {str(e)}")
 
 if __name__ == "__main__":
     app.run()
