@@ -39,14 +39,15 @@ def download_and_upload(client, message):
         if os.path.exists(output_filename):
             m.edit("📤 جاري رفع الملف على أرشيف السحاب...")
             
-            # رفع الملف على Internet Archive
-            identifier = f"hediatv-{os.urandom(4).hex()}"
+            # رفع الملف على Internet Archive بالاسم الثابت والنظيف
+            identifier = f"hediatv-{os.urandom(3).hex()}"
+            safe_filename = "video.mp4"
             s3_access = {'access_key': IA_ACCESS_KEY, 'secret_key': IA_SECRET_KEY}
             
-            r = upload(identifier, files=[output_filename], metadata={'mediatype': 'movies', 'title': 'HediaTV Download'}, **s3_access)
+            r = upload(identifier, files=[(output_filename, safe_filename)], metadata={'mediatype': 'movies', 'title': 'HediaTV Download'}, **s3_access)
             
             if r[0].status_code == 200:
-                direct_link = f"https://archive.org/download/{identifier}/{output_filename}"
+                direct_link = f"https://archive.org/download/{identifier}/{safe_filename}"
                 m.edit(f"✅ تم الرفع بنجاح يا فنان!\n\n🔗 **الرابط المباشر:**\n{direct_link}")
             else:
                 m.edit("❌ حدث خطأ أثناء الرفع على الأرشيف.")
