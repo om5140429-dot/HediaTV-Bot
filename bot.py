@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import threading
 from flask import Flask
 import requests
@@ -36,7 +37,7 @@ def upload_to_internet_archive(file_path):
     if not IA_ACCESS_KEY or not IA_SECRET_KEY:
         raise Exception("مفاتيح Internet Archive غير موجودة في المتغيرات السرية!")
     
-    identifier = f"hediatv_video_{int(time.time())}"
+    identifier = f"hediatv_video_{int(time.time())}_{random.randint(1000, 9999)}"
     file_name = os.path.basename(file_path)
     
     upload(
@@ -66,13 +67,15 @@ def download_handler(client, message):
 
     status_msg = message.reply_text("⏳ جاري سحب وتحميل الفيديو سحابياً، ثواني ويكون جاهز...")
     
+    # توليد اسم ملف فريد تماماً لكل طلب منعاً لتداخل العمليات
+    unique_filename = f"video_{int(time.time())}_{random.randint(1000, 9999)}.mp4"
+    
     try:
-        if os.path.exists("video.mp4"):
-            os.remove("video.mp4")
-
         ydl_opts = {
             'format': 'best',
-            'outtmpl': 'video.mp4',
+            'outtmpl': unique_filename,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -80,21 +83,21 @@ def download_handler(client, message):
             
         status_msg.edit_text("📤 جاري رفع الفيديو على سحابة Internet Archive (دائم وبدون حدود)...")
         
-        direct_link = upload_to_internet_archive("video.mp4")
+        direct_link = upload_to_internet_archive(unique_filename)
         
         message.reply_text(
             f"✅ **تم تجهيز الفيديو بنجاح يا أسطورة!**\n\n🔗 **الرابط المباشر الدائم:**\n{direct_link}",
             disable_web_page_preview=True
         )
         
-        if os.path.exists("video.mp4"):
-            os.remove("video.mp4")
+        if os.path.exists(unique_filename):
+            os.remove(unique_filename)
             
         status_msg.delete()
         
     except Exception as e:
-        if os.path.exists("video.mp4"):
-            os.remove("video.mp4")
+        if os.path.exists(unique_filename):
+            os.remove(unique_filename)
         status_msg.edit_text(f"❌ حصل خطأ أثناء المعالجة: {str(e)}")
 
 print("Bot and Web server are running... 🚀")
