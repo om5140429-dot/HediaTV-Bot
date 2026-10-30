@@ -1,6 +1,6 @@
 pyrogram
 tgcrypto
-yt-dlp
+yt-dlp --upgrade
 flask
 requests
 internetarchive
