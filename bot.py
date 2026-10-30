@@ -53,7 +53,7 @@ def upload_to_internet_archive(file_path):
 
 @app.on_message(filters.command("start"))
 def start_handler(client, message):
-    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك الفيديو وهسحبه وأوفر لك رابطه المباشر الدائم فوراً 🚀")
+    message.reply_text("🎬 أهلاً بيك يا هندسة في بوت Hedia TV! ابعت لي لينك صفحة التحميل أو الفيديو وهسحبه وأوفر لك رابطه المباشر الدائم فوراً 🚀")
 
 @app.on_message(filters.text & ~filters.command("start"))
 def download_handler(client, message):
@@ -65,7 +65,7 @@ def download_handler(client, message):
     if not url.startswith("http"):
         return
 
-    status_msg = message.reply_text("⏳ جاري سحب وتحميل الفيديو سحابياً، ثواني ويكون جاهز...")
+    status_msg = message.reply_text("⏳ جاري سحب وتحميل الفيديو من صفحة التحميل سحابياً، ثواني ويكون جاهز...")
     
     # توليد اسم ملف فريد تماماً لكل طلب منعاً لتداخل العمليات
     unique_filename = f"video_{int(time.time())}_{random.randint(1000, 9999)}.mp4"
@@ -76,6 +76,10 @@ def download_handler(client, message):
             'outtmpl': unique_filename,
             'nocheckcertificate': True,
             'ignoreerrors': False,
+            'geo_bypass': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
